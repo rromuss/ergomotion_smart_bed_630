@@ -1,5 +1,5 @@
 from custom_components.ergomotion.core.client import Client
-from custom_components.ergomotion.core.device import Device
+from custom_components.ergomotion.core.device import Device, crc
 
 Client.ping = lambda *args: None
 
@@ -259,3 +259,44 @@ def test_foot_position_attribute_uses_foot_move():
     }
 
     assert device.attribute("foot_position") == {"position": 42, "move": True}
+
+
+def test_set_attribute_sends_command_when_state_is_known():
+    class ClientMock:
+        def __init__(self):
+            self.sent = []
+
+        def ping(self):
+            pass
+
+        def send(self, data):
+            self.sent.append(data)
+
+    device = Device("test", None)
+    device.client = ClientMock()
+    device.current_state = {"head_massage": 0}
+
+    device.set_attribute("head_massage", 50)
+
+    expected = b"\xe5\xfe\x16" + (0x00000800).to_bytes(4, "little")
+    expected += bytes([crc(expected)])
+    assert device.client.sent == [expected]
+
+
+def test_set_attribute_waits_for_data_when_state_is_unknown():
+    class ClientMock:
+        def __init__(self):
+            self.sent = []
+
+        def ping(self):
+            pass
+
+        def send(self, data):
+            self.sent.append(data)
+
+    device = Device("test", None)
+    device.client = ClientMock()
+
+    device.set_attribute("head_massage", 50)
+
+    assert device.client.sent == []

@@ -45,6 +45,9 @@ class Client:
                     "0000ffe4-0000-1000-8000-00805f9b34fb", self.callback
                 )
 
+                if self.send_data:
+                    self.send(self.send_data)
+
                 while (delay := self.ping_time - time.time()) > 0:
                     await asyncio.sleep(delay)
 
@@ -69,11 +72,22 @@ class Client:
             self.send_task = asyncio.create_task(self._send_coro())
 
     async def _send_coro(self):
+        data = self.send_data
+        if not data:
+            self.send_task = None
+            return
+
         try:
             await self.client.write_gatt_char(
-                "0000ffe9-0000-1000-8000-00805f9b34fb", self.send_data, True
+                "0000ffe9-0000-1000-8000-00805f9b34fb", data, True
             )
         except Exception as e:
             _LOGGER.warning("send error", exc_info=e)
+        else:
+            if self.send_data == data:
+                self.send_data = None
 
         self.send_task = None
+
+        if self.send_data and self.client and self.client.is_connected:
+            self.send_task = asyncio.create_task(self._send_coro())

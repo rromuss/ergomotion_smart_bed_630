@@ -146,6 +146,9 @@ class Device:
         self.target_state[name] = value
         self.client.ping()
 
+        if self.current_state:
+            self.send_command()
+
     def send_command(self):
         command = 0
 
