@@ -1,0 +1,5 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+._*
+ergomotion_ha_agent_context.md
