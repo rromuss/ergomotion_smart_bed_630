@@ -5,8 +5,10 @@
 Supports:
 
 - head and foot actual position with online moving status (`cover` position)
-- head and foot massage speed control (`fan` speed)
-- massage timeout control (`fan` mode) and remain time counter (`light` attributes)
+- head and foot massage on/off control (`switch`)
+- head and foot massage power control with three levels (`select`)
+- separated head and foot massage timeout buttons for 10, 20, and 30 minutes (`button`)
+- massage remain time counter (`light` attributes)
 - scene selection (`light` effects)
 - fast flat scene (turn off `light`)
 - led control (`light`)

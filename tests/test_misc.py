@@ -1,5 +1,10 @@
 from custom_components.ergomotion.core.client import Client
-from custom_components.ergomotion.core.device import Device, crc
+from custom_components.ergomotion.core.device import (
+    DEFAULT_MASSAGE_PERCENTAGE,
+    Device,
+    crc,
+    massage_level_from_percentage,
+)
 
 Client.ping = lambda *args: None
 
@@ -300,3 +305,43 @@ def test_set_attribute_waits_for_data_when_state_is_unknown():
     device.set_attribute("head_massage", 50)
 
     assert device.client.sent == []
+
+
+def test_start_massage_timer_targets_one_zone():
+    class ClientMock:
+        def __init__(self):
+            self.sent = []
+
+        def ping(self):
+            pass
+
+        def send(self, data):
+            self.sent.append(data)
+
+    device = Device("test", None)
+    device.client = ClientMock()
+    device.current_state = {
+        "head_massage": 0,
+        "foot_massage": 66,
+        "timer_target": None,
+    }
+
+    device.start_massage_timer("head_massage", "10")
+
+    expected_command = 0x00000800 | 0x01000000 | 0x00000200
+    expected = b"\xe5\xfe\x16" + expected_command.to_bytes(4, "little")
+    expected += bytes([crc(expected)])
+    assert device.client.sent == [expected]
+    assert device.target_state == {
+        "head_massage": DEFAULT_MASSAGE_PERCENTAGE,
+        "foot_massage": 0,
+        "timer_target": "10",
+    }
+
+
+def test_massage_level_from_percentage_maps_to_three_levels():
+    assert massage_level_from_percentage(None) is None
+    assert massage_level_from_percentage(0) is None
+    assert massage_level_from_percentage(33) == "Слабый"
+    assert massage_level_from_percentage(50) == "Средний"
+    assert massage_level_from_percentage(100) == "Сильный"

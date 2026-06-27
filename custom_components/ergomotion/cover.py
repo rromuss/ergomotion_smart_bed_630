@@ -17,6 +17,7 @@ async def async_setup_entry(
 
 
 class XCover(XEntity, CoverEntity, RestoreEntity):
+    _attr_icon = "mdi:bed"
     _attr_is_closed = None
 
     async def async_added_to_hass(self) -> None:

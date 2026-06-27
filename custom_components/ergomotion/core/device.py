@@ -8,6 +8,17 @@ from .client import Client
 MIN_STEP = 100
 SCENE_OPTIONS = ["flat", "lounge", "tv", "zerog"]
 TIMER_OPTIONS = ["10", "20", "30"]
+MASSAGE_ZONES = ("head_massage", "foot_massage")
+MASSAGE_ZONE_NAMES = {
+    "head_massage": "головы",
+    "foot_massage": "ног",
+}
+MASSAGE_LEVELS = {
+    "Слабый": 33,
+    "Средний": 66,
+    "Сильный": 100,
+}
+DEFAULT_MASSAGE_PERCENTAGE = MASSAGE_LEVELS["Средний"]
 
 
 class Attribute(TypedDict, total=False):
@@ -143,11 +154,26 @@ class Device:
             return Attribute(is_on=self.current_state.get(attr))
 
     def set_attribute(self, name: str, value: int | str | None):
-        self.target_state[name] = value
+        self.set_attributes({name: value})
+
+    def set_attributes(self, values: dict[str, int | str | None]):
+        self.target_state.update(values)
         self.client.ping()
 
         if self.current_state:
             self.send_command()
+
+    def start_massage_timer(self, zone: str, timer: str):
+        other_zone = "foot_massage" if zone == "head_massage" else "head_massage"
+        percentage = self.current_state.get(zone) or DEFAULT_MASSAGE_PERCENTAGE
+
+        self.set_attributes(
+            {
+                other_zone: 0,
+                zone: percentage,
+                "timer_target": timer,
+            }
+        )
 
     def send_command(self):
         command = 0
@@ -223,3 +249,13 @@ class Device:
 
 def crc(data: bytes) -> int:
     return (~sum(i for i in data)) & 0xFF
+
+
+def massage_level_from_percentage(percentage: int | None) -> str | None:
+    if not percentage:
+        return None
+
+    return min(
+        MASSAGE_LEVELS,
+        key=lambda level: abs(MASSAGE_LEVELS[level] - percentage),
+    )
