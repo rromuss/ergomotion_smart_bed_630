@@ -20,6 +20,10 @@ class XCover(XEntity, CoverEntity, RestoreEntity):
     _attr_icon = "mdi:bed"
     _attr_is_closed = None
 
+    def __init__(self, device, attr: str):
+        self._attr_extra_state_attributes = {"max_position": 100}
+        super().__init__(device, attr)
+
     async def async_added_to_hass(self) -> None:
         state = await self.async_get_last_state()
         max_position = state.attributes.get("max_position") if state else None
